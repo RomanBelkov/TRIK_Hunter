@@ -11,8 +11,6 @@ let minMass = 5
 let red = (100, 0, 0)
 let green = (0, 100, 0)
 let blue = (0, 0, 100)
-let black = (0, 0, 0)
-let white = (100, 100, 100)
 let brown = (65, 17, 17)
 let orange = (100, 65, 0)
 let yellow = (100, 100, 0)
@@ -20,7 +18,7 @@ let teal = (0, 50, 50)
 let purple = (63, 13, 94)
 let pink = (100, 75, 80)
 let colors = 
-    [red; green; blue; (*white;*) (*black;*) brown; orange; yellow; teal; purple; pink]
+    [red; green; blue; brown; orange; yellow; teal; purple; pink]
 
 let scale var mA sC  = (Trik.Helpers.limit (-mA) mA var) / sC
 
@@ -36,7 +34,6 @@ let updatePositionY y acc =
 
 
 let colorProcessor (r, g, b) = 
-    printfn "rgb : %d %d %d" (r * 255 / 100) (g * 255 / 100) (b * 255 / 100)
     let del (x, y, z) = (x - r) * (x - r) + (g - y) * (g - y) + (b - z) * (b - z)
     let rec loop (x :: xs) acc =
         let sup = del x
@@ -49,7 +46,6 @@ let colorProcessor (r, g, b) =
     loop colors red
 
 let conversion (x : DetectTarget) = 
-    printfn "%d %d %d %d %d %d" x.Hue x.Saturation x.Value x.HueTolerance x.SaturationTolerance x.ValueTolerance
     let (r, g, b) = 
         Trik.Helpers.HSVtoRGB(float x.Hue, (float x.Saturation) / 100. , (float x.Value) / 100.)
     colorProcessor (int (r * RGBdepth), int (g * RGBdepth), int (b * RGBdepth))
@@ -64,8 +60,6 @@ let main _ =
 
     let sensor = model.ObjectSensor
     let buttons = new ButtonPad()
-
-    model.LedStripe.SetPower (75, 20, 20)
 
     let sensorOutput = sensor.ToObservable()
     
@@ -99,6 +93,8 @@ let main _ =
     buttons.Start()
     sensor.Start()
     Trik.Helpers.SendToShell """v4l2-ctl -d "/dev/video2" --set-ctrl white_balance_temperature_auto=1"""
+
+    model.LedStripe.SetPower (75, 20, 20)
 
 
     exit.WaitOne() |> ignore
