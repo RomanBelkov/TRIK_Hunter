@@ -32,7 +32,6 @@ let updatePositionY y acc =
     then acc + scale y maxAngleY scaleConstY
     else acc
 
-
 let colorProcessor (r, g, b) = 
     let del (x, y, z) = (x - r) * (x - r) + (g - y) * (g - y) + (b - z) * (b - z)
     let rec loop (x :: xs) acc =
@@ -95,7 +94,6 @@ let main _ =
     Trik.Helpers.SendToShell """v4l2-ctl -d "/dev/video2" --set-ctrl white_balance_temperature_auto=1"""
 
     model.LedStripe.SetPower (75, 20, 20)
-
 
     exit.WaitOne() |> ignore
     0
