@@ -1,9 +1,10 @@
 ﻿open Trik
+open Trik.Collections
 open System.Threading
 
-let maxAngleX = 40
+let maxAngleX = 60
 let maxAngleY = 60
-let scaleConstX = 10
+let scaleConstX = 20
 let scaleConstY = 20
 let RGBdepth = 100.
 let minMass = 5
@@ -28,7 +29,7 @@ let updatePositionX x acc =
     else acc
 
 let updatePositionY y acc =
-    if (y > 5 && y <= 100 && acc < 20) || (y < -5 && y >= -100 && acc > -40) 
+    if (y > 5 && y <= 100 && acc < 30) || (y < -5 && y >= -100 && acc > -30) 
     then acc + scale y maxAngleY scaleConstY
     else acc
 
@@ -51,14 +52,19 @@ let conversion (x : DetectTarget) =
 
 let exit = new EventWaitHandle(false, EventResetMode.AutoReset)
 
+let servoSetting = { stop = 0; zero = 1400000; min = 625000; max = 2175000; period = 20000000 }
+
 [<EntryPoint>]
 let main _ =
-    let model = new Model(ObjectSensorConfig = Ports.VideoSource.USB)
-    model.ServoConfig.[0] <- ("E1", "/sys/class/pwm/ehrpwm.1:1", { stop = 0; zero = 1600000; min = 800000; max = 2400000; period = 20000000 })
-    model.ServoConfig.[1] <- ("E2", "/sys/class/pwm/ehrpwm.1:0", { stop = 0; zero = 1600000; min = 800000; max = 2400000; period = 20000000 })
+    
+    use model = new Model(ObjectSensorConfig = VideoSource.USB)
+    model.ServosConfig.[C1] <- servoSetting
+    model.ServosConfig.[C2] <- servoSetting
 
-    let sensor = model.ObjectSensor
-    let buttons = new ButtonPad()
+    use sensor  = model.ObjectSensor
+    use buttons = model.Buttons
+    use xServo  = model.Servos.[C1]
+    use yServo  = model.Servos.[C2]
 
     let sensorOutput = sensor.ToObservable()
     
@@ -75,19 +81,20 @@ let main _ =
              |> Observable.choose (fun o -> o.TryGetLocation)
              |> Observable.filter (fun loc -> loc.Mass > minMass) 
              |> Observable.scan (fun (accX, accY) loc -> (updatePositionX loc.X accX, updatePositionY loc.Y accY)) (0, 0)
-             |> Observable.subscribe (fun (a, b) -> model.Servo.["E1"].SetPower -a
-                                                    model.Servo.["E2"].SetPower b)
-
-    use downButtonDispose = buttons.ToObservable() 
+             |> Observable.subscribe (fun (a, b) -> xServo.SetPower -a
+                                                    yServo.SetPower b)
+    
+    let observableButtons = buttons.ToObservable()
+    use downButtonDispose = observableButtons
                             |> Observable.filter (fun x -> ButtonEventCode.Down = x.Button) 
                             |> Observable.subscribe (fun _ -> sensor.Detect())
     
-    use upButtonDispose = buttons.ToObservable()
+    use upButtonDispose = observableButtons
                           |> Observable.filter (fun x -> ButtonEventCode.Up = x.Button)
                           |> Observable.subscribe (fun _ -> exit.Set() |> ignore)
 
-    use timerSetterDisposable = Observable.Interval(System.TimeSpan.FromSeconds 40.0) 
-                                |> Observable.subscribe (fun _ -> sensor.Detect())
+//    use timerSetterDisposable = Observable (System.TimeSpan.FromSeconds 40.0) 
+//                                |> Observable.subscribe (fun _ -> sensor.Detect())
     
     buttons.Start()
     sensor.Start()

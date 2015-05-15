@@ -66,7 +66,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="Trik.Core">
-      <HintPath>..\..\trik-sharp (GitHub for Windows)\Source\bin\Release\Trik.Core.dll</HintPath>
+      <HintPath>..\..\..\trik-sharp\Source\bin\Release\Trik.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
